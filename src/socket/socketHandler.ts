@@ -36,18 +36,36 @@ export const initializeSocketIO = (io: Server) => {
     // Store online user
     onlineUsers.set(userId, socket.id)
 
-    // Update user status
-    await prisma.user.update({
-      where: { id: userId },
-      data: { isOnline: true, lastSeen: new Date() },
-    })
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      })
 
-    // Broadcast online status
-    io.emit("user:online", { userId })
+      if (user) {
+        // Update user status
+        await prisma.user.update({
+          where: { id: userId },
+          data: { isOnline: true, lastSeen: new Date() },
+        })
 
-    // Send current online users
-    const onlineUserIds = Array.from(onlineUsers.keys())
-    socket.emit("users:online", { userIds: onlineUserIds })
+        // Broadcast online status
+        io.emit("user:online", { userId })
+
+        // Send current online users
+        const onlineUserIds = Array.from(onlineUsers.keys())
+        socket.emit("users:online", { userIds: onlineUserIds })
+      } else {
+        console.error(`[Socket] User not found in database: ${userId}`)
+        socket.emit("auth:error", { message: "User not found. Please login again." })
+        socket.disconnect()
+        return
+      }
+    } catch (error) {
+      console.error(`[Socket] Error updating user status:`, error)
+      socket.emit("auth:error", { message: "Database error. Please try again." })
+      socket.disconnect()
+      return
+    }
 
     // Handle typing indicator
     socket.on("typing:start", (data: { receiverId: string }) => {
@@ -69,10 +87,20 @@ export const initializeSocketIO = (io: Server) => {
       console.log(`[Socket] User disconnected: ${userId}`)
       onlineUsers.delete(userId)
 
-      await prisma.user.update({
-        where: { id: userId },
-        data: { isOnline: false, lastSeen: new Date() },
-      })
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+        })
+
+        if (user) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: { isOnline: false, lastSeen: new Date() },
+          })
+        }
+      } catch (error) {
+        console.error(`[Socket] Error updating user status on disconnect:`, error)
+      }
 
       io.emit("user:offline", { userId })
     })
