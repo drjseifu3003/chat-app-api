@@ -1,0 +1,19 @@
+# Dependencies
+node_modules
+
+# Environment
+.env
+.env.local
+
+# Build
+dist
+
+# Prisma
+prisma/migrations/*_migration/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
