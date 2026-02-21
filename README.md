@@ -13,6 +13,7 @@ Node.js backend API for the Shipper Chat Application with Express, Socket.IO, Pr
 - Password hashing with bcrypt
 - Input validation
 
+
 ## Setup
 
 ### 1. Install Dependencies
