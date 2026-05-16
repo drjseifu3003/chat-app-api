@@ -8,6 +8,10 @@ interface AuthenticatedSocket extends Socket {
 
 const onlineUsers = new Map<string, string>() // userId -> socketId
 
+
+
+
+
 export const initializeSocketIO = (io: Server) => {
   // Authentication middleware
   io.use(async (socket: AuthenticatedSocket, next) => {
